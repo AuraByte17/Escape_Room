@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escape Room: O Enigma do Mestre das Marionetas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            touch-action: manipulation;
+            background-color: #0c1427;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+            background-size: 25px 25px;
+        }
+        .font-cinzel { font-family: 'Cinzel Decorative', cursive; }
+        .page { display: none; }
+        .page.active { display: flex; flex-direction: column; animation: fadeIn 0.7s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #app-container {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            box-shadow: 0 0 45px rgba(251, 191, 36, 0.15);
+        }
+
+        .puzzle-area { 
+            transition: all 0.3s ease; 
+            border: 2px solid transparent; 
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(5px);
+            border-radius: 1rem;
+        }
+        .puzzle-area:not(.completed):not(.locked):hover { 
+            transform: scale(1.05) rotate(1deg); 
+            background-color: rgba(251, 191, 36, 0.1); 
+            border-color: #fde047; 
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+        }
+        .puzzle-area.completed { 
+            background-color: rgba(74, 222, 128, 0.1); 
+            border: 2px solid #4ade80; 
+            cursor: default; 
+        }
+        .puzzle-area.locked { 
+            background-color: rgba(239, 68, 68, 0.1); 
+            border: 2px solid #ef4444; 
+            cursor: pointer; 
+        }
+        .symbol-collected { 
+            filter: grayscale(100%) opacity(30%); 
+            transition: all 0.5s ease; 
+        }
+        .symbol-collected.active { 
+            filter: none; 
+            opacity: 1; 
+            transform: scale(1.1);
+            text-shadow: 0 0 15px #fde047;
+        }
+        .map-grid-cell { width: 45px; height: 45px; border: 1px solid #4a5568; cursor: pointer; transition: background-color 0.2s; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #9ca3af; }
+        .map-grid-cell.selected { background-color: #facc15; color: #1f2937; }
+        
+        @keyframes reveal-animation { 0% { transform: scale(0) rotate(-180deg); opacity: 0; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+        .reveal-animation { animation: reveal-animation 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards; }
+
+        .btn-primary {
+            background-image: linear-gradient(to right, #facc15 0%, #fb923c 51%, #facc15 100%);
+            background-size: 200% auto;
+            transition: 0.5s;
+            box-shadow: 0 4px 15px 0 rgba(251, 191, 36, 0.4);
+        }
+        .btn-primary:hover {
+            background-position: right center;
+        }
+
+        .modal-content {
+            background: #1e293b;
+            border: 2px solid;
+            border-image-slice: 1;
+            border-width: 2px;
+            border-image-source: linear-gradient(to left, #facc15, #fb923c);
+            animation: fadeIn 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
+
+    <div id="app-container" class="w-full max-w-5xl mx-auto rounded-2xl shadow-2xl overflow-hidden">
+
+        <!-- Ecrã de Palavra-Passe (NOVO) -->
+        <div id="password-page" class="page active p-8 md:p-12 text-center justify-center">
+            <div class="w-full max-w-md">
+                <h1 class="font-cinzel text-4xl text-amber-300 mb-6">Acesso à Oficina</h1>
+                <p class="text-slate-300 mb-4">Insira a palavra-passe secreta para entrar.</p>
+                <input type="password" id="password-input" class="bg-slate-700 border border-slate-600 rounded-lg text-white text-2xl uppercase text-center p-2 w-full mb-4" placeholder="PALAVRA-PASSE">
+                <button id="password-button" class="btn-primary text-slate-900 font-bold py-3 px-8 rounded-lg text-xl w-full">Entrar</button>
+                <p id="password-error" class="text-red-400 mt-4 h-6"></p>
+            </div>
+        </div>
+
+        <!-- Ecrã de Introdução -->
+        <div id="intro-page" class="page p-8 md:p-12 text-center justify-center">
+            <h1 class="font-cinzel text-5xl md:text-6xl font-bold text-amber-300 mb-6">O Enigma do Mestre das Marionetas</h1>
+            <p class="text-lg md:text-xl text-slate-300 mb-10 max-w-3xl mx-auto">Bem-vindos, meus pequenos aprendizes. A minha oficina está agora fechada. Um grupo está lá dentro, a descobrir os meus segredos. O outro está cá fora, à procura da liberdade. Trabalhem em conjunto, mesmo que separados. O tempo está a contar.</p>
+            <button id="start-button" class="btn-primary text-slate-900 font-bold py-4 px-10 rounded-lg text-2xl">Começar o Desafio</button>
+        </div>
+
+        <!-- Hub Principal da Oficina -->
+        <div id="hub-page" class="page">
+            <header class="p-4 bg-slate-900/50 flex justify-between items-center border-b border-slate-700">
+                <h2 class="font-cinzel text-3xl text-amber-300">Oficina Mágica</h2>
+                <div id="timer" class="text-4xl font-bold text-red-500 font-mono">60:00</div>
+            </header>
+            <div class="p-4 md:p-8 puzzle-hub-bg flex-grow">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-full">
+                    <div id="tear-hub" data-puzzle="tear" class="puzzle-area p-4 text-center cursor-pointer flex flex-col justify-center items-center">
+                        <div class="text-4xl mb-2">🧵</div><h3 class="font-cinzel text-xl">O Tear Encantado</h3>
+                    </div>
+                    <div id="contos-hub" data-puzzle="contos" class="puzzle-area locked p-4 text-center cursor-pointer flex flex-col justify-center items-center">
+                        <div class="text-4xl mb-2">🐓</div><h3 class="font-cinzel text-xl">O Conto Perdido</h3>
+                    </div>
+                    <div id="garrafa-hub" data-puzzle="garrafa" class="puzzle-area locked p-4 text-center cursor-pointer flex flex-col justify-center items-center">
+                        <div class="text-4xl mb-2">🍾</div><h3 class="font-cinzel text-xl">A Mensagem na Garrafa</h3>
+                    </div>
+                    <div id="marioneta-hub" data-puzzle="marioneta" class="puzzle-area locked p-4 text-center cursor-pointer flex flex-col justify-center items-center">
+                        <div class="text-4xl mb-2">🎭</div><h3 class="font-cinzel text-xl">O Enigma das Marionetas</h3>
+                    </div>
+                    <div id="mapa-hub" data-puzzle="mapa" class="puzzle-area locked p-4 text-center cursor-pointer flex flex-col justify-center items-center">
+                        <div class="text-4xl mb-2">🗺️</div><h3 class="font-cinzel text-xl">O Mapa do Tesouro</h3>
+                    </div>
+                    <div id="final-hub" data-puzzle="final" class="puzzle-area locked p-4 text-center cursor-pointer flex flex-col justify-center items-center">
+                        <div class="text-4xl mb-2">🗝️</div><h3 class="font-cinzel text-xl">O Palco Principal</h3>
+                    </div>
+                </div>
+            </div>
+            <footer class="p-4 bg-slate-900/50 border-t border-slate-700">
+                <h3 class="text-center font-cinzel text-xl mb-2 text-amber-300">Símbolos Recolhidos</h3>
+                <div id="collected-symbols-hub" class="flex justify-center items-center space-x-6">
+                    <div id="symbol-fio-hub" class="symbol-collected text-5xl">🧵</div>
+                    <div id="symbol-galo-hub" class="symbol-collected text-5xl">🐓</div>
+                    <div id="symbol-sereia-hub" class="symbol-collected text-5xl">🧜‍♀️</div>
+                    <div id="symbol-marioneta-hub" class="symbol-collected text-5xl">🎭</div>
+                    <div id="symbol-caveira-hub" class="symbol-collected text-5xl">☠️</div>
+                </div>
+            </footer>
+        </div>
+        
+        <!-- Container para as páginas dos puzzles -->
+        <div id="puzzle-page-container" class="page p-8 justify-center"></div>
+        
+        <!-- Páginas de Revelação Final -->
+        <div id="revelation-sun-page" class="page flex-col items-center justify-center p-8 bg-blue-900 min-h-[500px]"></div>
+        <div id="revelation-moon-page" class="page flex-col items-center justify-center p-8 bg-indigo-900 min-h-[500px]"></div>
+
+        <!-- Ecrã de Fim de Jogo -->
+        <div id="game-over-page" class="page flex-col items-center justify-center p-8 bg-red-900/90 text-center min-h-[500px]">
+            <h1 class="font-cinzel text-6xl text-red-300 mb-4">Tempo Esgotado!</h1>
+            <p class="text-2xl text-gray-200 mb-8 italic">"A oficina permanece fechada para sempre... Foram apanhados na minha teia."</p>
+            <div class="text-8xl mb-8">⌛</div>
+            <button onclick="window.location.reload()" class="btn-primary text-slate-900 font-bold py-3 px-8 rounded-lg text-2xl">Tentar de Novo</button>
+        </div>
+
+        <!-- Modals -->
+        <div id="feedback-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" style="display: none;"></div>
+        <div id="lock-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" style="display: none;"></div>
+        <div id="hint-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" style="display: none;"></div>
+
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- CONFIGURAÇÃO E ESTADO DO JOGO ---
+        const ACCESS_PASSWORD = 'MESTRE'; // Palavra-passe secreta para aceder ao jogo.
+        
+        const PUZZLE_DATA = {
+            'tear': { title: 'O Tear Encantado', clue: '"O padrão do tear imita o céu: as colunas das pontas são o azul da noite, e a linha do meio é o raio dourado do sol."<br>Clique nas células para as colorir corretamente.', symbol: '🧵', symbolId: 'fio', nextPuzzle: 'contos', clueForOutside: 'Procurem onde o sol nunca chega.', narrative: 'Dizem que os meus fios podem tecer o próprio destino. Mas será que conseguem tecer a vossa liberdade?', hint: 'Observem o céu. A noite está nas bordas, o sol do meio-dia cruza o centro.' },
+            'contos': { title: 'O Conto Perdido', clue: 'Usem as pistas que viram para escolher as palavras corretas e restaurar a lenda.', symbol: '🐓', symbolId: 'galo', nextPuzzle: 'garrafa', unlockCode: '8', clueForOutside: 'Alto e verde, mas sem folhas.', narrative: 'As histórias de antigamente têm poder. O galo cantou para salvar um inocente. Quem cantará por vocês?', hint: 'A história é sobre a lenda mais famosa de Barcelos. Um animal cantou para provar a inocência de um homem.' },
+            'garrafa': { title: 'A Mensagem na Garrafa', clue: '"A maré trouxe uma mensagem, mas apenas os números são visíveis. Cada número corresponde a uma letra (A=1, B=2...). Decifrem a palavra secreta que encontraram na garrafa."', symbol: '🧜‍♀️', symbolId: 'sereia', nextPuzzle: 'marioneta', unlockCode: 'MAR', clueForOutside: 'Tenho muitas teclas, mas não abro portas.', narrative: 'O mar guarda segredos profundos. A sereia representa a beleza e o perigo. Tal como a minha oficina.', hint: 'O código é uma palavra. A=1, B=2, C=3... encontrem a letra para cada número.' },
+            'marioneta': { title: 'O Enigma das Marionetas', clue: '"O Mestre usou 25 fios no total para as suas criações. Com base nas marionetas que encontraram na sala, quantos fios estão partidos?"', symbol: '🎭', symbolId: 'marioneta', nextPuzzle: 'mapa', unlockCode: '3', clueForOutside: 'A minha vida é um círculo de números que nunca para.', narrative: 'Cada marioneta tem uma alma, controlada pelos fios certos. Mas alguns fios... partem-se. A perfeição é uma ilusão.', hint: 'Primeiro, contem todos os fios que as marionetas na sala *têm*. Depois, comparem com o número total de fios que o Mestre disse ter usado.' },
+            'mapa': { title: 'O Mapa do Tesouro', clue: 'Usem o mapa rasgado que encontraram para descobrir os locais secretos na grelha.', symbol: '☠️', symbolId: 'caveira', nextPuzzle: 'final', unlockCode: 'FOGO', clueForOutside: 'Sou o guardião da porta, mas não tenho boca para falar.', narrative: 'Todos procuram um tesouro. Mas o verdadeiro tesouro não é ouro nem prata, é a sabedoria para escapar.', hint: 'As letras representam as linhas (horizontal) e os números as colunas (vertical). Encontrem os três pontos exatos.' },
+            'final': { title: 'O Palco Principal', unlockCode: '7' }
+        };
+
+        const PUZZLE_ORDER = ['tear', 'contos', 'garrafa', 'marioneta', 'mapa', 'final'];
+
+        const state = {
+            puzzlesCompleted: [],
+            timerInterval: null,
+            timeLeft: 3600, // 60 minutos
+            activePuzzle: null,
+            finalPath: null,
+            hintsUsed: []
+        };
+
+        // --- FUNÇÕES GERAIS DA UI ---
+        const showPage = (pageId) => {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        };
+
+        const startTimer = (display) => {
+            state.timerInterval = setInterval(() => {
+                state.timeLeft--;
+                const minutes = String(Math.floor(state.timeLeft / 60)).padStart(2, '0');
+                const seconds = String(state.timeLeft % 60).padStart(2, '0');
+                display.textContent = `${minutes}:${seconds}`;
+                if (state.timeLeft <= 0) {
+                    clearInterval(state.timerInterval);
+                    showPage('game-over-page');
+                }
+            }, 1000);
+        };
+
+        const showFeedbackModal = (title, text, symbol = '', isCorrect = false, narrative = '', clueForOutside = '') => {
+            const modal = document.getElementById('feedback-modal');
+            const clueHtml = clueForOutside ? `<div class="mt-6 pt-4 border-t border-slate-600"><p class="text-slate-400 text-sm">Pista para o Grupo Exterior:</p><p class="text-amber-300 text-lg italic">"${clueForOutside}"</p></div>` : '';
+            const narrativeHtml = narrative ? `<div class="mt-4 pt-4 border-t border-slate-700"><p class="text-slate-400 text-sm">O Mestre sussurra:</p><p class="text-cyan-300 text-md italic">"${narrative}"</p></div>` : '';
+            modal.innerHTML = `<div class="modal-content rounded-lg p-8 text-center max-w-md w-full"><h2 class="font-cinzel text-4xl mb-4 ${isCorrect ? 'text-green-400' : 'text-red-400'}">${title}</h2><p class="text-lg mb-4 text-slate-300">${text}</p><div class="text-7xl mb-6">${symbol}</div>${narrativeHtml}${clueHtml}<button id="feedback-close-button" class="btn-primary mt-4 text-slate-900 font-bold py-2 px-6 rounded-lg">OK</button></div>`;
+            modal.style.display = 'flex';
+            modal.querySelector('#feedback-close-button').addEventListener('click', () => {
+                modal.style.display = 'none';
+                if (isCorrect) showPage('hub-page');
+            });
+        };
+
+        const showLockModal = (puzzleId, correctCode, previousClue = '') => {
+            const modal = document.getElementById('lock-modal');
+            const puzzleTitle = PUZZLE_DATA[puzzleId].title;
+            const clueHtml = previousClue ? `<div class="mt-6 pt-4 border-t border-slate-600"><p class="text-slate-400 text-sm">Lembrete da Pista Anterior:</p><p class="text-amber-300 text-lg italic">"${previousClue}"</p></div>` : '';
+            modal.innerHTML = `<div class="modal-content rounded-lg p-8 text-center max-w-md w-full">
+                <h2 class="font-cinzel text-3xl mb-4 text-amber-300">Puzzle Bloqueado</h2>
+                <p class="text-lg mb-6 text-slate-300">Para desbloquear "${puzzleTitle}", insiram o código que o grupo exterior encontrou.</p>
+                <input id="lock-input" type="text" class="bg-slate-700 border border-slate-600 rounded-lg text-white text-2xl uppercase text-center p-2 w-64 mb-6" placeholder="CÓDIGO">
+                ${clueHtml}
+                <div class="flex justify-center gap-4 mt-4">
+                    <button id="lock-back-button" class="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-6 rounded-lg">Voltar</button>
+                    <button id="lock-check-button" class="btn-primary text-slate-900 font-bold py-2 px-6 rounded-lg">Desbloquear</button>
+                </div>
+            </div>`;
+            modal.style.display = 'flex';
+            
+            modal.querySelector('#lock-back-button').addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+
+            modal.querySelector('#lock-check-button').addEventListener('click', () => {
+                const input = modal.querySelector('#lock-input').value.trim().toUpperCase();
+                if (input === correctCode.toUpperCase()) {
+                    modal.style.display = 'none';
+                    document.getElementById(`${puzzleId}-hub`).classList.remove('locked');
+                    goToPuzzle(puzzleId);
+                } else {
+                    const lockInput = modal.querySelector('#lock-input');
+                    lockInput.classList.add('border-red-500');
+                    setTimeout(() => lockInput.classList.remove('border-red-500'), 1000);
+                }
+            });
+        };
+
+        const showHintModal = (puzzleId) => {
+            const modal = document.getElementById('hint-modal');
+            const hintUsed = state.hintsUsed.includes(puzzleId);
+            const hintText = PUZZLE_DATA[puzzleId].hint;
+
+            if (hintUsed) {
+                modal.innerHTML = `<div class="modal-content rounded-lg p-8 text-center max-w-md w-full">
+                    <h2 class="font-cinzel text-3xl mb-4 text-amber-300">Pista</h2>
+                    <p class="text-lg mb-6 text-slate-300 italic">"${hintText}"</p>
+                    <button id="hint-ok-button" class="btn-primary mt-4 text-slate-900 font-bold py-2 px-6 rounded-lg">OK</button>
+                </div>`;
+                modal.style.display = 'flex';
+                modal.querySelector('#hint-ok-button').addEventListener('click', () => { modal.style.display = 'none'; });
+            } else {
+                modal.innerHTML = `<div class="modal-content rounded-lg p-8 text-center max-w-md w-full">
+                    <h2 class="font-cinzel text-3xl mb-4 text-red-400">Pedir Pista?</h2>
+                    <p class="text-lg mb-6 text-slate-300">Pedir uma pista irá custar <span class="font-bold text-red-500">5 minutos</span> do vosso tempo. Têm a certeza?</p>
+                    <div class="flex justify-center gap-4 mt-4">
+                        <button id="hint-cancel-button" class="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-6 rounded-lg">Cancelar</button>
+                        <button id="hint-confirm-button" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded-lg">Sim, quero a pista</button>
+                    </div>
+                </div>`;
+                modal.style.display = 'flex';
+                modal.querySelector('#hint-cancel-button').addEventListener('click', () => { modal.style.display = 'none'; });
+                modal.querySelector('#hint-confirm-button').addEventListener('click', () => {
+                    state.timeLeft -= 300; // Penalidade de 5 minutos
+                    state.hintsUsed.push(puzzleId);
+                    modal.style.display = 'none';
+                    showHintModal(puzzleId); // Mostra a pista
+                });
+            }
+        };
+        
+        // --- LÓGICA DO JOGO ---
+
+        const goToPuzzle = (puzzleId) => {
+            state.activePuzzle = puzzleId;
+            if (puzzleId === 'final') {
+                renderFinalRiddlePage();
+            } else {
+                renderPuzzlePage(puzzleId);
+            }
+            showPage('puzzle-page-container');
+        };
+
+        const completePuzzle = (puzzleId) => {
+            const puzzleData = PUZZLE_DATA[puzzleId];
+            showFeedbackModal('Correto!', 'Conseguiram!', puzzleData.symbol, true, puzzleData.narrative, puzzleData.clueForOutside);
+            
+            if (!state.puzzlesCompleted.includes(puzzleId)) {
+                state.puzzlesCompleted.push(puzzleId);
+                document.getElementById(`${puzzleId}-hub`).classList.add('completed');
+                document.getElementById(`symbol-${puzzleData.symbolId}-hub`).classList.add('active');
+            }
+        };
+
+        // --- RENDERIZAÇÃO E VERIFICAÇÃO DE PUZZLES ---
+
+        const renderPuzzlePage = (puzzleId) => {
+            const container = document.getElementById('puzzle-page-container');
+            const puzzle = PUZZLE_DATA[puzzleId];
+            let content = `<div class="w-full max-w-3xl text-center"><h2 class="font-cinzel text-4xl text-amber-300 text-center mb-4">${puzzle.title}</h2><p class="text-center text-slate-400 mb-6">${puzzle.clue || ''}</p>`;
+            
+            switch(puzzleId) {
+                case 'tear': content += `<div id="tear-grid" class="grid grid-cols-5 gap-1 mx-auto w-fit mb-6"></div>`; break;
+                case 'contos': content += `<div class="text-xl md:text-2xl space-y-4 bg-slate-900/50 p-6 rounded-lg"><p>A lenda do <select id="conto-1" class="bg-slate-800 rounded p-1"><option>...</option><option>Rei</option><option>Galo</option><option>Povo</option></select> de Barcelos conta a história de um peregrino <select id="conto-2" class="bg-slate-800 rounded p-1"><option>...</option><option>culpado</option><option>perdido</option><option>inocente</option></select>, salvo de ser enforcado por um galo que <select id="conto-3" class="bg-slate-800 rounded p-1"><option>...</option><option>cantou</option><option>fugiu</option><option>voou</option></select> depois de assado.</p></div>`; break;
+                case 'garrafa': content += `<input type="text" id="puzzle-input" class="bg-slate-700 border border-slate-600 rounded-lg text-white text-2xl uppercase text-center p-2 w-64 mb-6" placeholder="PALAVRA SECRETA">`; break;
+                case 'marioneta': content += `<input type="number" id="puzzle-input" class="bg-slate-700 border border-slate-600 rounded-lg text-white text-2xl text-center p-2 w-40 mb-6" placeholder="NÚMERO">`; break;
+                case 'mapa': content += `<div id="mapa-grid" class="grid grid-cols-5 gap-1 mx-auto w-fit mb-6"></div>`; break;
+            }
+            content += `<div class="mt-8 text-center flex justify-center items-center gap-4">
+                <button id="hint-button" class="bg-sky-600 hover:bg-sky-500 text-white font-bold p-3 rounded-full" title="Pedir Pista (-5 min)">💡</button>
+                <button id="check-button" class="btn-primary text-slate-900 font-bold py-2 px-6 rounded-lg">Verificar</button> 
+                <button id="back-button" class="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-6 rounded-lg">Voltar</button>
+            </div></div>`;
+            container.innerHTML = content;
+
+            document.getElementById('check-button').addEventListener('click', () => checkSolution(puzzleId));
+            document.getElementById('back-button').addEventListener('click', () => showPage('hub-page'));
+            document.getElementById('hint-button').addEventListener('click', () => showHintModal(puzzleId));
+            
+            if (puzzleId === 'tear') setupTearPuzzle();
+            if (puzzleId === 'mapa') setupMapPuzzle();
+        };
+
+        const renderFinalRiddlePage = () => {
+             const container = document.getElementById('puzzle-page-container');
+             let content = `<div class="w-full max-w-3xl text-center">
+                <h2 class="font-cinzel text-4xl text-amber-300 mb-2">A Decisão Final</h2>
+                <p class="text-amber-300 text-lg mb-6">O Mestre deixou um último enigma. A resposta irá definir o vosso destino.</p>
+                <p class="text-2xl italic text-slate-300 mb-6 bg-slate-900/50 p-6 rounded-lg">"Tenho um coração que não bate. Dou a vida e o calor, mas se me olhares diretamente, causo-te dor. Quem sou eu?"</p>
+                <input type="text" id="puzzle-input" class="bg-slate-700 border border-slate-600 rounded-lg text-white text-2xl uppercase text-center p-2 w-40 mb-6" placeholder="RESPOSTA">
+                <div class="mt-8 text-center">
+                    <button id="check-button" class="btn-primary text-slate-900 font-bold py-2 px-6 rounded-lg">Confirmar</button> 
+                    <button id="back-button" class="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-6 rounded-lg">Voltar</button>
+                </div>
+            </div>`;
+            container.innerHTML = content;
+            document.getElementById('check-button').addEventListener('click', () => checkSolution('final-riddle'));
+            document.getElementById('back-button').addEventListener('click', () => showPage('hub-page'));
+        };
+
+        const renderFinalSequencePage = () => {
+            const container = document.getElementById('puzzle-page-container');
+            let content = `<div class="w-full max-w-3xl text-center">
+                <h2 class="font-cinzel text-4xl text-amber-300 mb-2">O Palco Principal</h2>
+                <p id="final-clue" class="text-amber-300 text-xl mb-6"></p>
+                <div id="final-slots" class="flex flex-wrap justify-center items-center gap-x-4 h-24 bg-slate-900/50 rounded-lg mb-6 min-h-[100px]"></div>
+                <p class="text-slate-400 mb-4">Cliquem nos símbolos na ordem correta:</p>
+                <div id="final-symbol-choices" class="flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
+                    <div data-symbol="fio" class="cursor-pointer text-6xl">🧵</div><div data-symbol="sereia" class="cursor-pointer text-6xl">🧜‍♀️</div><div data-symbol="galo" class="cursor-pointer text-6xl">🐓</div><div data-symbol="marioneta" class="cursor-pointer text-6xl">🎭</div><div data-symbol="caveira" class="cursor-pointer text-6xl">☠️</div>
+                </div>
+                <div class="mt-8 text-center">
+                    <button id="reset-final-button" class="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded-lg">Recomeçar Ordem</button>
+                    <button id="back-button" class="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-6 rounded-lg">Voltar</button>
+                </div>
+            </div>`;
+            container.innerHTML = content;
+            setupFinalPuzzle();
+            document.getElementById('back-button').addEventListener('click', () => showPage('hub-page'));
+        };
+
+        const checkSolution = (puzzleId) => {
+            let isCorrect = false;
+            const input = document.getElementById('puzzle-input');
+            switch(puzzleId) {
+                case 'tear': isCorrect = checkTearSolution(); break;
+                case 'contos': isCorrect = document.getElementById('conto-1').value === 'Galo' && document.getElementById('conto-2').value === 'inocente' && document.getElementById('conto-3').value === 'cantou'; break;
+                case 'garrafa': isCorrect = input.value.trim().toUpperCase() === 'SEREIA'; break;
+                case 'marioneta': isCorrect = input.value === '4'; break;
+                case 'mapa': isCorrect = checkMapSolution(); break;
+                case 'final-riddle':
+                    const answer = input.value.trim().toUpperCase();
+                    if (answer === 'SOL' || answer === 'LUA') {
+                        state.finalPath = answer.toLowerCase();
+                        renderFinalSequencePage();
+                    } else { showFeedbackModal('Não é essa a resposta.', 'O enigma do Mestre é mais profundo.', '', false); }
+                    return;
+            }
+            if (isCorrect) completePuzzle(puzzleId);
+            else { showFeedbackModal('Errado!', 'A vossa solução não está correta. Tentem de novo.', '', false); }
+        };
+        
+        // --- FUNÇÕES ESPECÍFICAS DE CADA PUZZLE ---
+        let userTearGrid, userMapSelection;
+        const setupTearPuzzle = () => {
+            const grid = document.getElementById('tear-grid');
+            userTearGrid = Array(5).fill(null).map(() => Array(5).fill(0));
+            for (let r = 0; r < 5; r++) { for (let c = 0; c < 5; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'map-grid-cell';
+                cell.addEventListener('click', () => {
+                    const colorIndex = (c === 0 || c === 4) ? 1 : (r === 2 ? 2 : 0);
+                    userTearGrid[r][c] = colorIndex;
+                    cell.style.backgroundColor = ['#374151', '#3b82f6', '#fde047'][colorIndex];
+                });
+                grid.appendChild(cell);
+            }}
+        };
+        const checkTearSolution = () => {
+            for(let r=0; r<5; r++) { for(let c=0; c<5; c++) {
+                if (userTearGrid[r][c] !== ((c === 0 || c === 4) ? 1 : (r === 2 ? 2 : 0))) return false;
+            }} return true;
+        };
+
+        const setupMapPuzzle = () => {
+            const grid = document.getElementById('mapa-grid');
+            userMapSelection = [];
+            const labels = ['A', 'B', 'C', 'D', 'E'];
+            for (let r = 0; r < 5; r++) { for (let c = 0; c < 5; c++) {
+                const cell = document.createElement('div');
+                cell.className = 'map-grid-cell';
+                cell.textContent = labels[r] + (c + 1);
+                const cellId = cell.textContent;
+                cell.addEventListener('click', () => {
+                    cell.classList.toggle('selected');
+                    if (userMapSelection.includes(cellId)) userMapSelection = userMapSelection.filter(id => id !== cellId);
+                    else userMapSelection.push(cellId);
+                });
+                grid.appendChild(cell);
+            }}
+        };
+        const checkMapSolution = () => {
+            const solution = ['A3', 'C5', 'E1'];
+            return solution.length === userMapSelection.length && solution.every(v => userMapSelection.includes(v));
+        };
+
+        const setupFinalPuzzle = () => {
+            let finalSequence = [];
+            document.getElementById('final-clue').textContent = state.finalPath === 'sol' ? "O caminho do DIA foi escolhido. Ordenem a jornada: da arte manual, à lenda que desperta, ao segredo do mar, ao palco, e ao tesouro final." : "O caminho da NOITE foi escolhido. Ordenem a jornada: do tesouro escondido, ao palco silencioso, ao segredo das profundezas, à lenda que adormece, ao trabalho sob a lua.";
+            document.querySelectorAll('#final-symbol-choices div').forEach(choice => {
+                choice.addEventListener('click', () => {
+                    if (finalSequence.length < 5 && !finalSequence.includes(choice.dataset.symbol)) {
+                        finalSequence.push(choice.dataset.symbol);
+                        updateFinalSlots(finalSequence);
+                        if (finalSequence.length === 5) checkFinalSequence(finalSequence);
+                    }
+                });
+            });
+            document.getElementById('reset-final-button').addEventListener('click', () => {
+                finalSequence = [];
+                updateFinalSlots(finalSequence);
+            });
+        };
+        const updateFinalSlots = (sequence) => {
+            const slotsContainer = document.getElementById('final-slots');
+            slotsContainer.innerHTML = '';
+            const symbolMap = { fio: '🧵', sereia: '🧜‍♀️', galo: '🐓', marioneta: '🎭', caveira: '☠️' };
+            sequence.forEach(symbol => { slotsContainer.innerHTML += `<div class="text-6xl">${symbolMap[symbol]}</div>`; });
+        };
+        const checkFinalSequence = (sequence) => {
+            const seqStr = JSON.stringify(sequence);
+            const daySeq = JSON.stringify(['fio', 'galo', 'sereia', 'marioneta', 'caveira']);
+            const nightSeq = JSON.stringify(['caveira', 'marioneta', 'sereia', 'galo', 'fio']);
+            let finalPageId = null;
+            if (state.finalPath === 'sol' && seqStr === daySeq) finalPageId = 'revelation-sun-page';
+            else if (state.finalPath === 'lua' && seqStr === nightSeq) finalPageId = 'revelation-moon-page';
+            
+            if(finalPageId) {
+                const page = document.getElementById(finalPageId);
+                const symbol = state.finalPath === 'sol' ? '☀️' : '🌙';
+                const keyType = state.finalPath === 'sol' ? 'SOL' : 'LUA';
+                page.innerHTML = `<h2 class="font-cinzel text-3xl mb-8">A Chave Correta é a da...</h2><div class="text-9xl reveal-animation" style="font-size: 200px;">${symbol}</div><h1 class="font-cinzel text-8xl mt-4">CHAVE DO ${keyType}</h1>`;
+                showPage(finalPageId);
+            } else { showFeedbackModal('Ordem Incorreta', 'A jornada não aconteceu nessa ordem. Leiam a pista e tentem de novo!', '', false); }
+        };
+        
+        // --- INICIALIZAÇÃO DO JOGO ---
+        const passwordInput = document.getElementById('password-input');
+        const passwordButton = document.getElementById('password-button');
+        const passwordError = document.getElementById('password-error');
+        
+        passwordButton.addEventListener('click', () => {
+            if (passwordInput.value.trim().toUpperCase() === ACCESS_PASSWORD) {
+                showPage('intro-page');
+            } else {
+                passwordError.textContent = 'Palavra-passe incorreta.';
+                passwordInput.classList.add('border-red-500');
+                setTimeout(() => {
+                    passwordError.textContent = '';
+                    passwordInput.classList.remove('border-red-500');
+                }, 2000);
+            }
+        });
+        passwordInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') {
+                passwordButton.click();
+            }
+        });
+
+        document.getElementById('start-button').addEventListener('click', () => {
+            showPage('hub-page');
+            startTimer(document.getElementById('timer'));
+        });
+
+        document.querySelectorAll('.puzzle-area').forEach(area => {
+            area.addEventListener('click', () => {
+                if (area.classList.contains('completed')) return;
+                const puzzleId = area.dataset.puzzle;
+
+                if (area.classList.contains('locked')) {
+                    const puzzleIndex = PUZZLE_ORDER.indexOf(puzzleId);
+                    if (puzzleIndex > 0) {
+                        const previousPuzzleId = PUZZLE_ORDER[puzzleIndex - 1];
+                        if (state.puzzlesCompleted.includes(previousPuzzleId)) {
+                            const clueToDisplay = PUZZLE_DATA[previousPuzzleId].clueForOutside;
+                            const unlockCode = PUZZLE_DATA[puzzleId].unlockCode;
+                            showLockModal(puzzleId, unlockCode, clueToDisplay);
+                        }
+                    }
+                } else {
+                    goToPuzzle(puzzleId);
+                }
+            });
+        });
+
+        showPage('password-page');
+    });
+    </script>
+</body>
+</html>
