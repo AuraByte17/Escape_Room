@@ -87,6 +87,16 @@
             max-height: 90vh;
             overflow-y: auto;
         }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        .shake {
+            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
@@ -140,13 +150,23 @@
                 </div>
             </div>
             <footer class="p-4 bg-slate-900/50 border-t border-slate-700">
-                <h3 class="text-center font-cinzel text-xl mb-2 text-amber-300">Símbolos Recolhidos</h3>
-                <div id="collected-symbols-hub" class="flex justify-center items-center space-x-6">
-                    <div id="symbol-fio-hub" class="symbol-collected text-5xl">🧵</div>
-                    <div id="symbol-galo-hub" class="symbol-collected text-5xl">🐓</div>
-                    <div id="symbol-sereia-hub" class="symbol-collected text-5xl">🧜‍♀️</div>
-                    <div id="symbol-marioneta-hub" class="symbol-collected text-5xl">🎭</div>
-                    <div id="symbol-caveira-hub" class="symbol-collected text-5xl">☠️</div>
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="text-center">
+                        <h3 class="font-cinzel text-lg text-amber-300">Símbolos Recolhidos</h3>
+                        <div id="collected-symbols-hub" class="flex justify-center items-center space-x-4 mt-1">
+                            <div id="symbol-fio-hub" class="symbol-collected text-4xl">🧵</div>
+                            <div id="symbol-galo-hub" class="symbol-collected text-4xl">🐓</div>
+                            <div id="symbol-sereia-hub" class="symbol-collected text-4xl">🧜‍♀️</div>
+                            <div id="symbol-marioneta-hub" class="symbol-collected text-4xl">🎭</div>
+                            <div id="symbol-caveira-hub" class="symbol-collected text-4xl">☠️</div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <h3 class="font-cinzel text-lg text-amber-300">Inventário de Códigos</h3>
+                        <div id="inventory-hub" class="flex justify-center items-center space-x-4 mt-1 font-mono text-slate-400 text-lg h-8">
+                            <!-- Códigos descobertos aparecem aqui -->
+                        </div>
+                    </div>
                 </div>
             </footer>
         </div>
@@ -191,6 +211,7 @@
 
         const state = {
             puzzlesCompleted: [],
+            codesCollected: [],
             timerInterval: null,
             timeLeft: 3600, // 60 minutos
             activePuzzle: null,
@@ -250,15 +271,17 @@
             });
 
             modal.querySelector('#lock-check-button').addEventListener('click', () => {
-                const input = modal.querySelector('#lock-input').value.trim().toUpperCase();
+                const inputEl = modal.querySelector('#lock-input');
+                const input = inputEl.value.trim().toUpperCase();
                 if (input === correctCode.toUpperCase()) {
                     modal.style.display = 'none';
+                    state.codesCollected.push(correctCode);
+                    updateInventory();
                     document.getElementById(`${puzzleId}-hub`).classList.remove('locked');
                     goToPuzzle(puzzleId);
                 } else {
-                    const lockInput = modal.querySelector('#lock-input');
-                    lockInput.classList.add('border-red-500');
-                    setTimeout(() => lockInput.classList.remove('border-red-500'), 1000);
+                    inputEl.classList.add('shake');
+                    setTimeout(() => inputEl.classList.remove('shake'), 820);
                 }
             });
         };
@@ -297,6 +320,11 @@
         };
         
         // --- LÓGICA DO JOGO ---
+
+        const updateInventory = () => {
+            const inventoryHub = document.getElementById('inventory-hub');
+            inventoryHub.innerHTML = state.codesCollected.map(code => `<span class="bg-slate-800 px-2 py-1 rounded">${code}</span>`).join('');
+        };
 
         const goToPuzzle = (puzzleId) => {
             state.activePuzzle = puzzleId;
@@ -486,7 +514,7 @@
                 const symbol = state.finalPath === 'sol' ? '☀️' : '🌙';
                 const keyType = state.finalPath === 'sol' ? 'SOL' : 'LUA';
                 page.innerHTML = `<h2 class="font-cinzel text-2xl md:text-4xl mb-6">A Chave Correta é a da...</h2>
-                                  <div class="text-8xl md:text-9xl reveal-animation">${symbol}</div>
+                                  <div class="text-8xl md:text-9xl reveal-animation" style="font-size: clamp(8rem, 25vw, 15rem);">${symbol}</div>
                                   <h1 class="font-cinzel text-5xl md:text-7xl mt-6">CHAVE DO ${keyType}</h1>
                                   <button onclick="window.location.reload()" class="btn-primary text-slate-900 font-bold py-3 px-8 rounded-lg text-2xl mt-8">Jogar Novamente</button>`;
                 showPage(finalPageId);
@@ -503,11 +531,11 @@
                 showPage('intro-page');
             } else {
                 passwordError.textContent = 'Palavra-passe incorreta.';
-                passwordInput.classList.add('border-red-500');
+                passwordInput.classList.add('shake');
                 setTimeout(() => {
                     passwordError.textContent = '';
-                    passwordInput.classList.remove('border-red-500');
-                }, 2000);
+                    passwordInput.classList.remove('shake');
+                }, 820);
             }
         });
         passwordInput.addEventListener('keyup', (event) => {
