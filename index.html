@@ -94,9 +94,13 @@
             30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
             40%, 60% { transform: translate3d(4px, 0, 0); }
         }
-        .shake {
-            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+        .shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.5); }
+            50% { box-shadow: 0 0 35px rgba(251, 191, 36, 0.8); }
         }
+        .glow-animation { animation: glow 2s ease-in-out 2; }
     </style>
 </head>
 <body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
@@ -117,7 +121,7 @@
         <!-- Ecrã de Introdução -->
         <div id="intro-page" class="page p-8 md:p-12 text-center justify-center">
             <h1 class="font-cinzel text-5xl md:text-6xl font-bold text-amber-300 mb-6">O Enigma do Mestre das Marionetas</h1>
-            <p class="text-lg md:text-xl text-slate-300 mb-10 max-w-3xl mx-auto">Bem-vindos, meus pequenos aprendizes. A minha oficina está agora fechada. Um grupo está lá dentro, a descobrir os meus segredos. O outro está cá fora, à procura da liberdade. Trabalhem em conjunto, mesmo que separados. O tempo está a contar.</p>
+            <p class="text-lg md:text-xl text-slate-300 mb-10 max-w-3xl mx-auto">Ah, visitantes... Há muito que a minha oficina não sentia o calor de almas curiosas. Fechei-vos aqui, não por maldade, mas por desespero. As minhas criações, a minha arte... estão a ser esquecidas. Mostrem-me que ainda existe magia nos vossos corações. Resolvam os meus enigmas, provem o vosso valor, e a liberdade que procuram será vossa, juntamente com um segredo que guardo há muito tempo.</p>
             <button id="start-button" class="btn-primary text-slate-900 font-bold py-4 px-10 rounded-lg text-2xl">Começar o Desafio</button>
         </div>
 
@@ -125,9 +129,12 @@
         <div id="hub-page" class="page">
             <header class="p-4 bg-slate-900/50 flex justify-between items-center border-b border-slate-700">
                 <h2 class="font-cinzel text-2xl md:text-3xl text-amber-300">Oficina Mágica</h2>
-                <div id="timer" class="text-3xl md:text-4xl font-bold text-red-500 font-mono">60:00</div>
+                <div id="timer" class="text-3xl md:text-4xl font-bold text-slate-200 font-mono transition-colors duration-500">60:00</div>
             </header>
-            <div class="p-4 md:p-8 puzzle-hub-bg flex-grow">
+            <div class="p-4 md:p-8 puzzle-hub-bg flex-grow relative">
+                <!-- Botão Secreto -->
+                <button id="bonus-button" class="absolute top-2 right-2 text-xl opacity-20 hover:opacity-100 transition-opacity">🕷️</button>
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-full">
                     <div id="tear-hub" data-puzzle="tear" class="puzzle-area p-4 text-center cursor-pointer flex flex-col justify-center items-center">
                         <div class="text-4xl mb-2">🧵</div><h3 class="font-cinzel text-xl">O Tear Encantado</h3>
@@ -185,11 +192,25 @@
             <div class="text-8xl mb-8">⌛</div>
             <button onclick="window.location.reload()" class="btn-primary text-slate-900 font-bold py-3 px-8 rounded-lg text-2xl">Tentar de Novo</button>
         </div>
+        
+        <!-- Ecrã do Livro de História -->
+        <div id="storybook-page" class="page flex-col items-center justify-center p-8 bg-amber-50 text-slate-800 min-h-[500px]">
+            <div class="w-full max-w-2xl text-center">
+                <h1 class="font-cinzel text-4xl md:text-5xl text-amber-900 mb-6">O Diário do Mestre</h1>
+                <div class="text-left text-lg space-y-4 bg-white/50 p-6 rounded-lg shadow-inner">
+                    <p>'Se estão a ler isto, é porque conseguiram. Não eram prisioneiros, mas sim a minha única esperança. Durante anos, vi o mundo lá fora a esquecer-se da magia das coisas feitas à mão. As minhas criações, que outrora dançavam para multidões, agora acumulam pó em silêncio.'</p>
+                    <p>'Criei este desafio não para vos prender, mas para encontrar alguém que ainda soubesse ver a alma num pedaço de madeira, a história num fio de lã. Vocês viram. Vocês lembraram-se.'</p>
+                    <p class="font-bold">'A porta nunca esteve verdadeiramente trancada para vos manter fora, mas sim para vos convidar a entrar no meu mundo. A liberdade que ganharam não é apenas a de sair desta sala, mas a de carregar convosco a magia que redescobriram aqui. Obrigado por me fazerem sentir menos só. A oficina é agora tanto vossa como minha.'</p>
+                </div>
+                <button onclick="window.location.reload()" class="btn-primary text-slate-900 font-bold py-3 px-8 rounded-lg text-2xl mt-8">Jogar Novamente</button>
+            </div>
+        </div>
 
         <!-- Modals -->
         <div id="feedback-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50" style="display: none;"></div>
         <div id="lock-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" style="display: none;"></div>
         <div id="hint-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" style="display: none;"></div>
+        <div id="bonus-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" style="display: none;"></div>
 
     </div>
 
@@ -202,7 +223,7 @@
             'tear': { title: 'O Tear Encantado', clue: '"O padrão do tear imita o céu: as colunas das pontas são o azul da noite, e a linha do meio é o raio dourado do sol."<br>Clique nas células para as colorir corretamente.', symbol: '🧵', symbolId: 'fio', nextPuzzle: 'contos', clueForOutside: 'Procurem onde o sol nunca chega.', narrative: 'Dizem que os meus fios podem tecer o próprio destino. Mas será que conseguem tecer a vossa liberdade?', hint: 'Observem o céu. A noite está nas bordas, o sol do meio-dia cruza o centro.' },
             'contos': { title: 'O Conto Perdido', clue: 'Usem as pistas que viram para escolher as palavras corretas e restaurar a lenda.', symbol: '🐓', symbolId: 'galo', nextPuzzle: 'garrafa', unlockCode: '8', clueForOutside: 'Alto e verde, mas sem folhas.', narrative: 'As histórias de antigamente têm poder. O galo cantou para salvar um inocente. Quem cantará por vocês?', hint: 'A história é sobre a lenda mais famosa de Barcelos. Um animal cantou para provar a inocência de um homem.' },
             'garrafa': { title: 'A Mensagem na Garrafa', clue: '"A maré trouxe uma mensagem, mas apenas os números são visíveis. Cada número corresponde a uma letra (A=1, B=2...). Decifrem a palavra secreta que encontraram na garrafa."', symbol: '🧜‍♀️', symbolId: 'sereia', nextPuzzle: 'marioneta', unlockCode: 'MAR', clueForOutside: 'Tenho muitas teclas, mas não abro portas.', narrative: 'O mar guarda segredos profundos. A sereia representa a beleza e o perigo. Tal como a minha oficina.', hint: 'O código é uma palavra. A=1, B=2, C=3... encontrem a letra para cada número.' },
-            'marioneta': { title: 'As Caixas do Mestre', clue: 'O Mestre tem 5 caixas na sala. Ele diz que cada uma guarda 3 das suas criações mais preciosas. Quantas criações tem ele no total?', symbol: '🎭', symbolId: 'marioneta', nextPuzzle: 'mapa', unlockCode: '3', clueForOutside: 'A minha vida é um círculo de números que nunca para.', narrative: 'Cada caixa guarda um sonho. Cada marioneta, uma história. O meu tesouro não é o que se vê, mas o que se pode imaginar.', hint: 'É uma simples multiplicação. Contem o número de caixas e multipliquem pelo número de criações em cada uma.' },
+            'marioneta': { title: 'As Caixas do Mestre', clue: 'O Mestre tem 5 caixas na sala. Ele diz que cada uma guarda 3 das suas criações mais preciosas. Quantas criações tem ele no total?', symbol: '🎭', symbolId: 'marioneta', nextPuzzle: 'mapa', unlockCode: '3', clueForOutside: 'A minha vida é um círculo de números que nunca para.', narrative: 'Cada caixa guarda um sonho. O meu tesouro é a imaginação.', hint: 'É uma simples multiplicação. Contem o número de caixas e multipliquem pelo número de criações em cada uma.' },
             'mapa': { title: 'O Mapa do Tesouro', clue: 'Usem o mapa rasgado que encontraram para descobrir os locais secretos na grelha.', symbol: '☠️', symbolId: 'caveira', nextPuzzle: 'final', unlockCode: 'FOGO', clueForOutside: 'Sou o guardião da porta, mas não tenho boca para falar.', narrative: 'Todos procuram um tesouro. Mas o verdadeiro tesouro não é ouro nem prata, é a sabedoria para escapar.', hint: 'As letras representam as linhas (horizontal) e os números as colunas (vertical). Encontrem os três pontos exatos.' },
             'final': { title: 'O Palco Principal', unlockCode: '7' }
         };
@@ -216,7 +237,8 @@
             timeLeft: 3600, // 60 minutos
             activePuzzle: null,
             finalPath: null,
-            hintsUsed: []
+            hintsUsed: [],
+            bonusUsed: false
         };
 
         // --- FUNÇÕES GERAIS DA UI ---
@@ -228,9 +250,14 @@
         const startTimer = (display) => {
             state.timerInterval = setInterval(() => {
                 state.timeLeft--;
-                const minutes = String(Math.floor(state.timeLeft / 60)).padStart(2, '0');
-                const seconds = String(state.timeLeft % 60).padStart(2, '0');
-                display.textContent = `${minutes}:${seconds}`;
+                const minutes = Math.floor(state.timeLeft / 60);
+                const seconds = state.timeLeft % 60;
+                display.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                
+                display.classList.remove('text-yellow-400', 'text-red-500');
+                if (minutes < 10) display.classList.add('text-red-500');
+                else if (minutes < 30) display.classList.add('text-yellow-400');
+                
                 if (state.timeLeft <= 0) {
                     clearInterval(state.timerInterval);
                     showPage('game-over-page');
@@ -277,7 +304,10 @@
                     modal.style.display = 'none';
                     state.codesCollected.push(correctCode);
                     updateInventory();
-                    document.getElementById(`${puzzleId}-hub`).classList.remove('locked');
+                    const hubEl = document.getElementById(`${puzzleId}-hub`);
+                    hubEl.classList.remove('locked');
+                    hubEl.classList.add('glow-animation');
+                    setTimeout(() => hubEl.classList.remove('glow-animation'), 4000);
                     goToPuzzle(puzzleId);
                 } else {
                     inputEl.classList.add('shake');
@@ -317,6 +347,33 @@
                     showHintModal(puzzleId); // Mostra a pista
                 });
             }
+        };
+
+        const showBonusModal = () => {
+            const modal = document.getElementById('bonus-modal');
+            modal.innerHTML = `<div class="modal-content rounded-lg p-8 text-center max-w-md w-full">
+                <h2 class="font-cinzel text-3xl mb-4 text-amber-300">Um Segredo!</h2>
+                <p class="text-lg mb-6 text-slate-300">A aranha tece uma pergunta: "Tenho 8 pernas e teço sem ter mãos. O que sou eu?"</p>
+                <input id="bonus-input" type="text" class="bg-slate-700 border border-slate-600 rounded-lg text-white text-2xl uppercase text-center p-2 w-64 mb-6" placeholder="RESPOSTA">
+                <div class="flex justify-center gap-4 mt-4">
+                    <button id="bonus-check-button" class="btn-primary text-slate-900 font-bold py-2 px-6 rounded-lg">Responder</button>
+                </div>
+            </div>`;
+            modal.style.display = 'flex';
+
+            modal.querySelector('#bonus-check-button').addEventListener('click', () => {
+                const inputEl = modal.querySelector('#bonus-input');
+                if (inputEl.value.trim().toUpperCase() === 'ARANHA') {
+                    state.timeLeft += 300; // Bónus de 5 minutos
+                    state.bonusUsed = true;
+                    document.getElementById('bonus-button').style.display = 'none';
+                    showFeedbackModal('Correto!', 'Ganharam 5 minutos extra!', '⏳', true);
+                } else {
+                    inputEl.classList.add('shake');
+                    setTimeout(() => inputEl.classList.remove('shake'), 820);
+                }
+                modal.style.display = 'none';
+            });
         };
         
         // --- LÓGICA DO JOGO ---
@@ -510,13 +567,29 @@
             else if (state.finalPath === 'lua' && seqStr === nightSeq) finalPageId = 'revelation-moon-page';
             
             if(finalPageId) {
+                clearInterval(state.timerInterval);
+                const timeTaken = 3600 - state.timeLeft;
+                const minutes = Math.floor(timeTaken / 60);
+                const seconds = timeTaken % 60;
+                const timeString = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
                 const page = document.getElementById(finalPageId);
                 const symbol = state.finalPath === 'sol' ? '☀️' : '🌙';
                 const keyType = state.finalPath === 'sol' ? 'SOL' : 'LUA';
-                page.innerHTML = `<h2 class="font-cinzel text-2xl md:text-4xl mb-6">A Chave Correta é a da...</h2>
-                                  <div class="text-8xl md:text-9xl reveal-animation" style="font-size: clamp(8rem, 25vw, 15rem);">${symbol}</div>
-                                  <h1 class="font-cinzel text-5xl md:text-7xl mt-6">CHAVE DO ${keyType}</h1>
-                                  <button onclick="window.location.reload()" class="btn-primary text-slate-900 font-bold py-3 px-8 rounded-lg text-2xl mt-8">Jogar Novamente</button>`;
+                const finalClue = state.finalPath === 'sol' ? "A vossa mente brilhou intensamente! Para a liberdade, procurem a caixa que reflete o vosso brilho, a <strong>Caixa do Sol</strong>." : "A vossa sabedoria iluminou a escuridão! Para a liberdade, procurem a caixa que reflete a vossa luz serena, a <strong>Caixa da Lua</strong>.";
+                
+                page.innerHTML = `<div class="text-center">
+                                      <h2 class="font-cinzel text-2xl md:text-4xl mb-4">A Chave Correta é a da...</h2>
+                                      <div class="text-8xl md:text-9xl reveal-animation" style="font-size: clamp(8rem, 25vw, 15rem);">${symbol}</div>
+                                      <h1 class="font-cinzel text-5xl md:text-7xl mt-4">CHAVE DO ${keyType}</h1>
+                                      <p class="text-xl mt-4">Tempo: ${timeString}</p>
+                                      <div class="mt-6 p-4 bg-black/20 rounded-lg max-w-lg mx-auto"><p class="text-amber-200 text-lg italic">${finalClue}</p></div>
+                                      <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+                                         <button id="storybook-button" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-lg text-xl">Ler o Diário do Mestre</button>
+                                         <button onclick="window.location.reload()" class="btn-primary text-slate-900 font-bold py-3 px-6 rounded-lg text-xl">Jogar Novamente</button>
+                                      </div>
+                                  </div>`;
+                page.querySelector('#storybook-button').addEventListener('click', () => showPage('storybook-page'));
                 showPage(finalPageId);
             } else { showFeedbackModal('Ordem Incorreta', 'A jornada não aconteceu nessa ordem. Leiam a pista e tentem de novo!', '', false); }
         };
@@ -568,6 +641,12 @@
                     goToPuzzle(puzzleId);
                 }
             });
+        });
+        
+        document.getElementById('bonus-button').addEventListener('click', () => {
+            if (!state.bonusUsed) {
+                showBonusModal();
+            }
         });
 
         showPage('password-page');
