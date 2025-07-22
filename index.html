@@ -84,6 +84,8 @@
             border-width: 2px;
             border-image-source: linear-gradient(to left, #facc15, #fb923c);
             animation: fadeIn 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -91,7 +93,7 @@
 
     <div id="app-container" class="w-full max-w-5xl mx-auto rounded-2xl shadow-2xl overflow-hidden">
 
-        <!-- Ecrã de Palavra-Passe (NOVO) -->
+        <!-- Ecrã de Palavra-Passe -->
         <div id="password-page" class="page active p-8 md:p-12 text-center justify-center">
             <div class="w-full max-w-md">
                 <h1 class="font-cinzel text-4xl text-amber-300 mb-6">Acesso à Oficina</h1>
@@ -112,8 +114,8 @@
         <!-- Hub Principal da Oficina -->
         <div id="hub-page" class="page">
             <header class="p-4 bg-slate-900/50 flex justify-between items-center border-b border-slate-700">
-                <h2 class="font-cinzel text-3xl text-amber-300">Oficina Mágica</h2>
-                <div id="timer" class="text-4xl font-bold text-red-500 font-mono">60:00</div>
+                <h2 class="font-cinzel text-2xl md:text-3xl text-amber-300">Oficina Mágica</h2>
+                <div id="timer" class="text-3xl md:text-4xl font-bold text-red-500 font-mono">60:00</div>
             </header>
             <div class="p-4 md:p-8 puzzle-hub-bg flex-grow">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-full">
@@ -127,7 +129,7 @@
                         <div class="text-4xl mb-2">🍾</div><h3 class="font-cinzel text-xl">A Mensagem na Garrafa</h3>
                     </div>
                     <div id="marioneta-hub" data-puzzle="marioneta" class="puzzle-area locked p-4 text-center cursor-pointer flex flex-col justify-center items-center">
-                        <div class="text-4xl mb-2">🎭</div><h3 class="font-cinzel text-xl">O Enigma das Marionetas</h3>
+                        <div class="text-4xl mb-2">🎭</div><h3 class="font-cinzel text-xl">As Caixas do Mestre</h3>
                     </div>
                     <div id="mapa-hub" data-puzzle="mapa" class="puzzle-area locked p-4 text-center cursor-pointer flex flex-col justify-center items-center">
                         <div class="text-4xl mb-2">🗺️</div><h3 class="font-cinzel text-xl">O Mapa do Tesouro</h3>
@@ -150,7 +152,7 @@
         </div>
         
         <!-- Container para as páginas dos puzzles -->
-        <div id="puzzle-page-container" class="page p-8 justify-center"></div>
+        <div id="puzzle-page-container" class="page p-4 md:p-8 justify-center"></div>
         
         <!-- Páginas de Revelação Final -->
         <div id="revelation-sun-page" class="page flex-col items-center justify-center p-8 bg-blue-900 min-h-[500px]"></div>
@@ -158,8 +160,8 @@
 
         <!-- Ecrã de Fim de Jogo -->
         <div id="game-over-page" class="page flex-col items-center justify-center p-8 bg-red-900/90 text-center min-h-[500px]">
-            <h1 class="font-cinzel text-6xl text-red-300 mb-4">Tempo Esgotado!</h1>
-            <p class="text-2xl text-gray-200 mb-8 italic">"A oficina permanece fechada para sempre... Foram apanhados na minha teia."</p>
+            <h1 class="font-cinzel text-5xl md:text-6xl text-red-300 mb-4">Tempo Esgotado!</h1>
+            <p class="text-xl md:text-2xl text-gray-200 mb-8 italic">"A oficina permanece fechada para sempre... Foram apanhados na minha teia."</p>
             <div class="text-8xl mb-8">⌛</div>
             <button onclick="window.location.reload()" class="btn-primary text-slate-900 font-bold py-3 px-8 rounded-lg text-2xl">Tentar de Novo</button>
         </div>
@@ -174,13 +176,13 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         // --- CONFIGURAÇÃO E ESTADO DO JOGO ---
-        const ACCESS_PASSWORD = 'MESTRE'; // Palavra-passe secreta para aceder ao jogo.
+        const ACCESS_PASSWORD = 'MESTRE';
         
         const PUZZLE_DATA = {
             'tear': { title: 'O Tear Encantado', clue: '"O padrão do tear imita o céu: as colunas das pontas são o azul da noite, e a linha do meio é o raio dourado do sol."<br>Clique nas células para as colorir corretamente.', symbol: '🧵', symbolId: 'fio', nextPuzzle: 'contos', clueForOutside: 'Procurem onde o sol nunca chega.', narrative: 'Dizem que os meus fios podem tecer o próprio destino. Mas será que conseguem tecer a vossa liberdade?', hint: 'Observem o céu. A noite está nas bordas, o sol do meio-dia cruza o centro.' },
             'contos': { title: 'O Conto Perdido', clue: 'Usem as pistas que viram para escolher as palavras corretas e restaurar a lenda.', symbol: '🐓', symbolId: 'galo', nextPuzzle: 'garrafa', unlockCode: '8', clueForOutside: 'Alto e verde, mas sem folhas.', narrative: 'As histórias de antigamente têm poder. O galo cantou para salvar um inocente. Quem cantará por vocês?', hint: 'A história é sobre a lenda mais famosa de Barcelos. Um animal cantou para provar a inocência de um homem.' },
             'garrafa': { title: 'A Mensagem na Garrafa', clue: '"A maré trouxe uma mensagem, mas apenas os números são visíveis. Cada número corresponde a uma letra (A=1, B=2...). Decifrem a palavra secreta que encontraram na garrafa."', symbol: '🧜‍♀️', symbolId: 'sereia', nextPuzzle: 'marioneta', unlockCode: 'MAR', clueForOutside: 'Tenho muitas teclas, mas não abro portas.', narrative: 'O mar guarda segredos profundos. A sereia representa a beleza e o perigo. Tal como a minha oficina.', hint: 'O código é uma palavra. A=1, B=2, C=3... encontrem a letra para cada número.' },
-            'marioneta': { title: 'O Enigma das Marionetas', clue: '"O Mestre usou 25 fios no total para as suas criações. Com base nas marionetas que encontraram na sala, quantos fios estão partidos?"', symbol: '🎭', symbolId: 'marioneta', nextPuzzle: 'mapa', unlockCode: '3', clueForOutside: 'A minha vida é um círculo de números que nunca para.', narrative: 'Cada marioneta tem uma alma, controlada pelos fios certos. Mas alguns fios... partem-se. A perfeição é uma ilusão.', hint: 'Primeiro, contem todos os fios que as marionetas na sala *têm*. Depois, comparem com o número total de fios que o Mestre disse ter usado.' },
+            'marioneta': { title: 'As Caixas do Mestre', clue: 'O Mestre tem 5 caixas na sala. Ele diz que cada uma guarda 3 das suas criações mais preciosas. Quantas criações tem ele no total?', symbol: '🎭', symbolId: 'marioneta', nextPuzzle: 'mapa', unlockCode: '3', clueForOutside: 'A minha vida é um círculo de números que nunca para.', narrative: 'Cada caixa guarda um sonho. Cada marioneta, uma história. O meu tesouro não é o que se vê, mas o que se pode imaginar.', hint: 'É uma simples multiplicação. Contem o número de caixas e multipliquem pelo número de criações em cada uma.' },
             'mapa': { title: 'O Mapa do Tesouro', clue: 'Usem o mapa rasgado que encontraram para descobrir os locais secretos na grelha.', symbol: '☠️', symbolId: 'caveira', nextPuzzle: 'final', unlockCode: 'FOGO', clueForOutside: 'Sou o guardião da porta, mas não tenho boca para falar.', narrative: 'Todos procuram um tesouro. Mas o verdadeiro tesouro não é ouro nem prata, é a sabedoria para escapar.', hint: 'As letras representam as linhas (horizontal) e os números as colunas (vertical). Encontrem os três pontos exatos.' },
             'final': { title: 'O Palco Principal', unlockCode: '7' }
         };
@@ -217,9 +219,9 @@
 
         const showFeedbackModal = (title, text, symbol = '', isCorrect = false, narrative = '', clueForOutside = '') => {
             const modal = document.getElementById('feedback-modal');
-            const clueHtml = clueForOutside ? `<div class="mt-6 pt-4 border-t border-slate-600"><p class="text-slate-400 text-sm">Pista para o Grupo Exterior:</p><p class="text-amber-300 text-lg italic">"${clueForOutside}"</p></div>` : '';
-            const narrativeHtml = narrative ? `<div class="mt-4 pt-4 border-t border-slate-700"><p class="text-slate-400 text-sm">O Mestre sussurra:</p><p class="text-cyan-300 text-md italic">"${narrative}"</p></div>` : '';
-            modal.innerHTML = `<div class="modal-content rounded-lg p-8 text-center max-w-md w-full"><h2 class="font-cinzel text-4xl mb-4 ${isCorrect ? 'text-green-400' : 'text-red-400'}">${title}</h2><p class="text-lg mb-4 text-slate-300">${text}</p><div class="text-7xl mb-6">${symbol}</div>${narrativeHtml}${clueHtml}<button id="feedback-close-button" class="btn-primary mt-4 text-slate-900 font-bold py-2 px-6 rounded-lg">OK</button></div>`;
+            const clueHtml = clueForOutside ? `<div class="mt-4 pt-2 border-t border-slate-600"><p class="text-slate-400 text-sm">Pista para o Grupo Exterior:</p><p class="text-amber-300 text-base italic">"${clueForOutside}"</p></div>` : '';
+            const narrativeHtml = narrative ? `<div class="mt-2 pt-2 border-t border-slate-700"><p class="text-slate-400 text-sm">O Mestre sussurra:</p><p class="text-cyan-300 text-sm italic">"${narrative}"</p></div>` : '';
+            modal.innerHTML = `<div class="modal-content rounded-lg p-6 text-center max-w-md w-full"><h2 class="font-cinzel text-3xl mb-2 ${isCorrect ? 'text-green-400' : 'text-red-400'}">${title}</h2><p class="text-base mb-2 text-slate-300">${text}</p><div class="text-6xl mb-4">${symbol}</div>${narrativeHtml}${clueHtml}<button id="feedback-close-button" class="btn-primary mt-4 text-slate-900 font-bold py-2 px-6 rounded-lg">OK</button></div>`;
             modal.style.display = 'flex';
             modal.querySelector('#feedback-close-button').addEventListener('click', () => {
                 modal.style.display = 'none';
@@ -322,7 +324,7 @@
         const renderPuzzlePage = (puzzleId) => {
             const container = document.getElementById('puzzle-page-container');
             const puzzle = PUZZLE_DATA[puzzleId];
-            let content = `<div class="w-full max-w-3xl text-center"><h2 class="font-cinzel text-4xl text-amber-300 text-center mb-4">${puzzle.title}</h2><p class="text-center text-slate-400 mb-6">${puzzle.clue || ''}</p>`;
+            let content = `<div class="w-full max-w-3xl text-center"><h2 class="font-cinzel text-3xl md:text-4xl text-amber-300 text-center mb-4">${puzzle.title}</h2><p class="text-center text-slate-400 mb-6">${puzzle.clue || ''}</p>`;
             
             switch(puzzleId) {
                 case 'tear': content += `<div id="tear-grid" class="grid grid-cols-5 gap-1 mx-auto w-fit mb-6"></div>`; break;
@@ -349,9 +351,9 @@
         const renderFinalRiddlePage = () => {
              const container = document.getElementById('puzzle-page-container');
              let content = `<div class="w-full max-w-3xl text-center">
-                <h2 class="font-cinzel text-4xl text-amber-300 mb-2">A Decisão Final</h2>
+                <h2 class="font-cinzel text-3xl md:text-4xl text-amber-300 mb-2">A Decisão Final</h2>
                 <p class="text-amber-300 text-lg mb-6">O Mestre deixou um último enigma. A resposta irá definir o vosso destino.</p>
-                <p class="text-2xl italic text-slate-300 mb-6 bg-slate-900/50 p-6 rounded-lg">"Tenho um coração que não bate. Dou a vida e o calor, mas se me olhares diretamente, causo-te dor. Quem sou eu?"</p>
+                <p class="text-xl md:text-2xl italic text-slate-300 mb-6 bg-slate-900/50 p-6 rounded-lg">"Tenho um coração que não bate. Dou a vida e o calor, mas se me olhares diretamente, causo-te dor. Quem sou eu?"</p>
                 <input type="text" id="puzzle-input" class="bg-slate-700 border border-slate-600 rounded-lg text-white text-2xl uppercase text-center p-2 w-40 mb-6" placeholder="RESPOSTA">
                 <div class="mt-8 text-center">
                     <button id="check-button" class="btn-primary text-slate-900 font-bold py-2 px-6 rounded-lg">Confirmar</button> 
@@ -366,8 +368,8 @@
         const renderFinalSequencePage = () => {
             const container = document.getElementById('puzzle-page-container');
             let content = `<div class="w-full max-w-3xl text-center">
-                <h2 class="font-cinzel text-4xl text-amber-300 mb-2">O Palco Principal</h2>
-                <p id="final-clue" class="text-amber-300 text-xl mb-6"></p>
+                <h2 class="font-cinzel text-3xl md:text-4xl text-amber-300 mb-2">O Palco Principal</h2>
+                <p id="final-clue" class="text-amber-300 text-lg md:text-xl mb-6"></p>
                 <div id="final-slots" class="flex flex-wrap justify-center items-center gap-x-4 h-24 bg-slate-900/50 rounded-lg mb-6 min-h-[100px]"></div>
                 <p class="text-slate-400 mb-4">Cliquem nos símbolos na ordem correta:</p>
                 <div id="final-symbol-choices" class="flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
@@ -390,7 +392,7 @@
                 case 'tear': isCorrect = checkTearSolution(); break;
                 case 'contos': isCorrect = document.getElementById('conto-1').value === 'Galo' && document.getElementById('conto-2').value === 'inocente' && document.getElementById('conto-3').value === 'cantou'; break;
                 case 'garrafa': isCorrect = input.value.trim().toUpperCase() === 'SEREIA'; break;
-                case 'marioneta': isCorrect = input.value === '4'; break;
+                case 'marioneta': isCorrect = input.value === '15'; break;
                 case 'mapa': isCorrect = checkMapSolution(); break;
                 case 'final-riddle':
                     const answer = input.value.trim().toUpperCase();
@@ -483,7 +485,10 @@
                 const page = document.getElementById(finalPageId);
                 const symbol = state.finalPath === 'sol' ? '☀️' : '🌙';
                 const keyType = state.finalPath === 'sol' ? 'SOL' : 'LUA';
-                page.innerHTML = `<h2 class="font-cinzel text-3xl mb-8">A Chave Correta é a da...</h2><div class="text-9xl reveal-animation" style="font-size: 200px;">${symbol}</div><h1 class="font-cinzel text-8xl mt-4">CHAVE DO ${keyType}</h1>`;
+                page.innerHTML = `<h2 class="font-cinzel text-2xl md:text-4xl mb-6">A Chave Correta é a da...</h2>
+                                  <div class="text-8xl md:text-9xl reveal-animation">${symbol}</div>
+                                  <h1 class="font-cinzel text-5xl md:text-7xl mt-6">CHAVE DO ${keyType}</h1>
+                                  <button onclick="window.location.reload()" class="btn-primary text-slate-900 font-bold py-3 px-8 rounded-lg text-2xl mt-8">Jogar Novamente</button>`;
                 showPage(finalPageId);
             } else { showFeedbackModal('Ordem Incorreta', 'A jornada não aconteceu nessa ordem. Leiam a pista e tentem de novo!', '', false); }
         };
